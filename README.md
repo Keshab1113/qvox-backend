@@ -1,16 +1,27 @@
-# QVox Tracking Backend
+# 🚀 QVox Tracking Backend
 
-Production-ready Node.js proxy backend that:
-- Routes all QVox transcription requests (file & URL mode)
-- Authenticates requests via **multiple API keys** (one per website)
-- Logs every call (status, output, duration, which key used) to **MySQL**
-- Uses **Redis as a write buffer** — zero propagation delay on requests
-- Background flush job drains Redis → MySQL every 5 seconds in batches
-- Admin REST API for key management + stats
+> Production-ready Node.js proxy & tracking backend for QVox transcription services.
+
+A scalable, zero-delay logging system that securely routes transcription requests, authenticates multiple API keys, and stores detailed analytics using Redis + MySQL.
 
 ---
 
-## Architecture
+## ✨ Features
+
+* 🔐 **Multi-API Key Authentication** (one key per website/client)
+* 🔄 **Proxy to QVox ML Service** (File & URL mode)
+* ⚡ **Zero Propagation Delay** using Redis write buffer
+* 🗄️ **Persistent Logging** in MySQL
+* 📊 **Admin Dashboard APIs** for usage stats
+* 📈 Daily aggregated statistics per API key
+* 🧠 Intelligent Redis → MySQL batch flushing
+* 🛡️ Rate limiting, security headers, CORS control
+* 📝 Structured logging with rotation (Winston)
+* 🐳 Docker-ready setup
+
+---
+
+# 🏗 Architecture Overview
 
 ```
 Your Websites
@@ -18,42 +29,70 @@ Your Websites
      ▼
 [Express Server :3000]
      │
-     ├── Auth Middleware (validates key via Redis cache → MySQL fallback)
+     ├── Auth Middleware (Redis cache → MySQL fallback)
      │
-     ├── pushLog(pending)  ──►  [Redis List: qvox:call_log_queue]
+     ├── pushLog(pending)  ──►  Redis Queue
      │                                     │
-     ├── Proxy ──► QVox ML Model           │  Background Flush Job (every 5s)
+     ├── Proxy Request ──► QVox ML Model  │  Background Flush (5s batch)
      │                                     ▼
-     └── pushLog(result)  ──►  [MySQL: call_logs, daily_stats]
+     └── pushLog(result)  ──►  MySQL (call_logs + daily_stats)
 ```
+
+### 🔥 Why This Design?
+
+* Request responses are **never blocked by database writes**
+* Redis acts as a high-speed buffer
+* Background job ensures reliable persistence
+* Fully scalable architecture
 
 ---
 
-## Quick Start (Docker)
+# 🧰 Tech Stack
+
+| Layer           | Technology                |
+| --------------- | ------------------------- |
+| Server          | Express                   |
+| Database        | MySQL (mysql2)            |
+| Cache/Queue     | Redis (ioredis)           |
+| HTTP Client     | Axios                     |
+| Auth            | Custom API Key Middleware |
+| Logging         | Winston + Daily Rotate    |
+| Security        | Helmet, CORS              |
+| Rate Limiting   | express-rate-limit        |
+| Compression     | compression               |
+| Upload Handling | Multer + FormData         |
+| Dev Tooling     | Nodemon                   |
+| Utilities       | dotenv, uuid              |
+
+---
+
+# 🚀 Quick Start (Docker – Recommended)
 
 ```bash
 cp .env.example .env
-# Edit .env with your real values
+# Update environment variables
 
 docker-compose up -d
 
-# Run migrations + seed initial API keys
+# Run migrations
 docker-compose exec app node src/config/migrate.js
+
+# Seed initial API keys
 docker-compose exec app node src/config/seed.js
 ```
 
 ---
 
-## Manual Setup
+# 🛠 Manual Setup
 
 ```bash
 npm install
 
-# 1. Set up .env (copy from .env.example)
-# 2. Run MySQL migrations
+# 1. Configure .env
+# 2. Run migrations
 node src/config/migrate.js
 
-# 3. Seed initial API keys (prints them to console)
+# 3. Seed API keys
 node src/config/seed.js
 
 # 4. Start server
@@ -62,32 +101,32 @@ npm start
 
 ---
 
-## Environment Variables
+# 🌍 Environment Variables
 
-| Variable | Description | Default |
-|---|---|---|
-| `PORT` | Server port | `3000` |
-| `DB_HOST` | MySQL host | `localhost` |
-| `DB_USER` | MySQL user | `root` |
-| `DB_PASSWORD` | MySQL password | |
-| `DB_NAME` | Database name | `qvox_tracking` |
-| `REDIS_HOST` | Redis host | `localhost` |
-| `REDIS_PORT` | Redis port | `6379` |
-| `REDIS_PASSWORD` | Redis password | |
-| `QVOX_BASE_URL` | QVox model URL | `http://37.34.188.123:8000` |
-| `QVOX_TOKEN` | QVox bearer token | (from docs) |
-| `ADMIN_KEY` | Admin API key | **Change this!** |
-| `FLUSH_INTERVAL_MS` | How often to flush Redis→MySQL | `5000` |
-| `FLUSH_BATCH_SIZE` | Max logs per flush | `100` |
-| `CORS_ORIGINS` | Comma-separated allowed origins | `*` |
+| Variable          | Description          | Default                                                |
+| ----------------- | -------------------- | ------------------------------------------------------ |
+| PORT              | Server port          | 3000                                                   |
+| DB_HOST           | MySQL host           | localhost                                              |
+| DB_USER           | MySQL user           | root                                                   |
+| DB_PASSWORD       | MySQL password       |                                                        |
+| DB_NAME           | Database name        | qvox_tracking                                          |
+| REDIS_HOST        | Redis host           | localhost                                              |
+| REDIS_PORT        | Redis port           | 6379                                                   |
+| QVOX_BASE_URL     | QVox API base URL    | [http://37.34.188.123:8000](http://37.34.188.123:8000) |
+| QVOX_TOKEN        | QVox bearer token    | —                                                      |
+| ADMIN_KEY         | Admin API key        | Required                                               |
+| FLUSH_INTERVAL_MS | Redis flush interval | 5000                                                   |
+| FLUSH_BATCH_SIZE  | Batch insert size    | 100                                                    |
+| CORS_ORIGINS      | Allowed origins      | *                                                      |
 
 ---
 
-## API Reference
+# 📡 API Reference
 
-### Transcription (from your websites)
+## 🎙 Transcription Endpoint
 
-**File upload:**
+### File Upload
+
 ```http
 POST /v1/transcribe
 Authorization: Bearer qvox_<your_api_key>
@@ -97,7 +136,8 @@ file: <audio file>
 model: QVox
 ```
 
-**URL mode:**
+### URL Mode
+
 ```http
 POST /v1/transcribe
 Authorization: Bearer qvox_<your_api_key>
@@ -107,7 +147,8 @@ url: https://example.com/audio.mp3
 model: QVox
 ```
 
-**Response:**
+### Response
+
 ```json
 {
   "request_id": "uuid",
@@ -118,91 +159,127 @@ model: QVox
 
 ---
 
-### Admin API
+# 🔐 Admin API
 
-All admin routes require: `X-Admin-Key: <ADMIN_KEY>`
+All admin routes require:
 
-#### List API keys
-```http
-GET /admin/keys
+```
+X-Admin-Key: <ADMIN_KEY>
 ```
 
-#### Create API key
-```http
-POST /admin/keys
-{ "key_name": "website-checkout" }
-```
+### API Key Management
 
-#### Enable/Disable key
-```http
-PATCH /admin/keys/:id
-{ "is_active": false }
-```
+* `GET /admin/keys`
+* `POST /admin/keys`
+* `PATCH /admin/keys/:id`
+* `DELETE /admin/keys/:id`
 
-#### Delete key
-```http
-DELETE /admin/keys/:id
-```
+### Logs & Analytics
 
-#### View call logs (paginated)
-```http
-GET /admin/logs?page=1&limit=20&status=failed&api_key_id=2&from=2024-01-01
-```
+* `GET /admin/logs`
+* `GET /admin/logs/:requestId`
+* `GET /admin/stats`
 
-#### View single log (full output)
-```http
-GET /admin/logs/:requestId
-```
+Includes:
 
-#### Stats dashboard
-```http
-GET /admin/stats
-```
-Returns overall stats, breakdown by API key, daily history, and Redis queue depth.
+* Total calls
+* Success / Failure breakdown
+* API key usage distribution
+* Daily summaries
+* Redis queue depth
 
 ---
 
-## MySQL Tables
+# 🗄 Database Schema
 
-### `api_keys`
-| Column | Type | Description |
-|---|---|---|
-| id | INT | Primary key |
-| key_name | VARCHAR | Label (e.g. "website-prod") |
-| api_key | VARCHAR | The actual bearer token |
-| is_active | TINYINT | 0 = disabled |
+## `api_keys`
 
-### `call_logs`
-| Column | Type | Description |
-|---|---|---|
-| request_id | CHAR(36) | UUID per request |
-| api_key_id | INT | Which key was used |
-| mode | ENUM | `file` or `url` |
-| status | ENUM | `pending` / `success` / `failed` |
-| http_status | SMALLINT | HTTP status from QVox |
-| output_text | MEDIUMTEXT | Full transcript |
-| output_segments | JSON | Segments array |
-| duration_ms | INT | Round-trip time in ms |
-| ip_address | VARCHAR | Caller IP |
-| created_at | DATETIME(3) | Millisecond precision |
-
-### `daily_stats`
-Materialized daily summary per API key — automatically updated by flush job.
+| Column    | Type    | Description        |
+| --------- | ------- | ------------------ |
+| id        | INT     | Primary key        |
+| key_name  | VARCHAR | Label              |
+| api_key   | VARCHAR | Bearer token       |
+| is_active | TINYINT | Enabled / Disabled |
 
 ---
 
-## MERN Frontend Integration
+## `call_logs`
 
-Replace direct QVox calls with your backend:
+| Column          | Type        | Description                |
+| --------------- | ----------- | -------------------------- |
+| request_id      | CHAR(36)    | Unique ID                  |
+| api_key_id      | INT         | API key used               |
+| mode            | ENUM        | file / url                 |
+| status          | ENUM        | pending / success / failed |
+| http_status     | SMALLINT    | QVox status code           |
+| output_text     | MEDIUMTEXT  | Transcript                 |
+| output_segments | JSON        | Segment data               |
+| duration_ms     | INT         | Processing time            |
+| ip_address      | VARCHAR     | Caller IP                  |
+| created_at      | DATETIME(3) | Timestamp                  |
+
+---
+
+## `daily_stats`
+
+Materialized aggregated summary per API key.
+Automatically updated during Redis → MySQL flush.
+
+---
+
+# 🔄 MERN Integration
+
+Replace direct QVox calls:
 
 ```javascript
 // Before
-const response = await axios.post("http://37.34.188.123:8000/v1/transcribe", form, {
-  headers: { Authorization: "Bearer zdbsjgu..." }
-});
+axios.post("http://37.34.188.123:8000/v1/transcribe", form)
 
 // After
-const response = await axios.post("https://your-backend.com/v1/transcribe", form, {
-  headers: { Authorization: "Bearer qvox_<website_specific_key>" }
-});
+axios.post("https://your-backend.com/v1/transcribe", form, {
+  headers: {
+    Authorization: "Bearer qvox_<website_key>"
+  }
+})
 ```
+
+---
+
+# 📈 Why This Backend is Production-Ready
+
+* Non-blocking logging architecture
+* High-performance Redis buffering
+* Batched MySQL writes
+* API key-level analytics
+* Secure admin access
+* Rate limiting & security headers
+* Log rotation & structured logging
+* Docker-ready deployment
+
+---
+
+# 🛡 Security Considerations
+
+* Change `ADMIN_KEY` immediately
+* Restrict CORS in production
+* Use strong API keys
+* Enable Redis authentication in production
+* Deploy behind reverse proxy (Nginx recommended)
+
+---
+
+# 📌 Future Enhancements
+
+* Prometheus metrics integration
+* Redis cluster mode
+* Horizontal scaling with PM2 / Kubernetes
+* Billing integration per API key
+* Web dashboard UI
+
+---
+
+# 🧠 Summary
+
+QVox Tracking Backend acts as a **secure, scalable control layer** between your websites and the QVox ML model — ensuring authentication, analytics, monitoring, and reliability without slowing down inference requests.
+
+---
