@@ -2,8 +2,8 @@ const axios = require("axios");
 const FormData = require("form-data");
 const logger = require("../utils/logger");
 
-const QVOX_BASE_URL = process.env.QVOX_BASE_URL || "http://37.34.188.123:8000";
-const QVOX_TOKEN = process.env.QVOX_TOKEN || "zdbsjgusgsbxzjgsfsadxdgdhagdfdadgdsdfgsd";
+const QVOX_BASE_URL = process.env.QVOX_BASE_URL || "https://api.drillingnwk.com/v1/transcribe";
+const QVOX_TOKEN = process.env.QVOX_API_KEY;
 const TIMEOUT = parseInt(process.env.QVOX_TIMEOUT) || 120000;
 
 /**

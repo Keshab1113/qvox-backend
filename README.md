@@ -112,7 +112,7 @@ npm start
 | DB_NAME           | Database name        | qvox_tracking                                          |
 | REDIS_HOST        | Redis host           | localhost                                              |
 | REDIS_PORT        | Redis port           | 6379                                                   |
-| QVOX_BASE_URL     | QVox API base URL    | [http://37.34.188.123:8000](http://37.34.188.123:8000) |
+| QVOX_BASE_URL     | QVox API base URL    | [https://api.drillingnwk.com/v1/transcribe](https://api.drillingnwk.com/v1/transcribe) |
 | QVOX_TOKEN        | QVox bearer token    | —                                                      |
 | ADMIN_KEY         | Admin API key        | Required                                               |
 | FLUSH_INTERVAL_MS | Redis flush interval | 5000                                                   |
@@ -233,7 +233,7 @@ Replace direct QVox calls:
 
 ```javascript
 // Before
-axios.post("http://37.34.188.123:8000/v1/transcribe", form)
+axios.post("https://api.drillingnwk.com/v1/transcribe/v1/transcribe", form)
 
 // After
 axios.post("https://your-backend.com/v1/transcribe", form, {

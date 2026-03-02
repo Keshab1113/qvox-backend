@@ -1,14 +1,14 @@
-version: "3.9"
+
 
 services:
   mysql:
     image: mysql:8.0
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: qvox_tracking
-      MYSQL_USER: qvox
-      MYSQL_PASSWORD: qvoxpassword
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
     ports:
       - "3306:3306"
     volumes:
@@ -43,13 +43,13 @@ services:
       PORT: 3000
       DB_HOST: mysql
       DB_PORT: 3306
-      DB_USER: qvox
-      DB_PASSWORD: qvoxpassword
-      DB_NAME: qvox_tracking
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      QVOX_BASE_URL: http://37.34.188.123:8000
-      QVOX_TOKEN: zdbsjgusgsbxzjgsfsadxdgdhagdfdadgdsdfgsd
+      QVOX_BASE_URL: ${QVOX_BASE_URL}
+      QVOX_TOKEN: ${QVOX_API_KEY}
       ADMIN_KEY: change-me-in-production
       FLUSH_INTERVAL_MS: 5000
       FLUSH_BATCH_SIZE: 100
