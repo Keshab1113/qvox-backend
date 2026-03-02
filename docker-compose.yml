@@ -1,0 +1,64 @@
+version: "3.9"
+
+services:
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: qvox_tracking
+      MYSQL_USER: qvox
+      MYSQL_PASSWORD: qvoxpassword
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: qvox
+      DB_PASSWORD: qvoxpassword
+      DB_NAME: qvox_tracking
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      QVOX_BASE_URL: http://37.34.188.123:8000
+      QVOX_TOKEN: zdbsjgusgsbxzjgsfsadxdgdhagdfdadgdsdfgsd
+      ADMIN_KEY: change-me-in-production
+      FLUSH_INTERVAL_MS: 5000
+      FLUSH_BATCH_SIZE: 100
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  mysql_data:
+  redis_data:
