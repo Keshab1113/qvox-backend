@@ -14,7 +14,7 @@ async function transcribeFile({ fileBuffer, originalname, mimetype, model = "QVo
   form.append("model", model);
   form.append("file", fileBuffer, { filename: originalname, contentType: mimetype });
 
-  const response = await axios.post(`${QVOX_BASE_URL}/v1/transcribe`, form, {
+  const response = await axios.post(QVOX_BASE_URL, form, {
     headers: {
       ...form.getHeaders(),
       Authorization: `Bearer ${QVOX_TOKEN}`,
@@ -35,7 +35,7 @@ async function transcribeUrl({ url, model = "QVox" }) {
   form.append("model", model);
   form.append("url", url);
 
-  const response = await axios.post(`${QVOX_BASE_URL}/v1/transcribe`, form, {
+  const response = await axios.post(QVOX_BASE_URL, form, {
     headers: {
       ...form.getHeaders(),
       Authorization: `Bearer ${QVOX_TOKEN}`,

@@ -53,7 +53,7 @@ app.get("/health", (req, res) => {
 
 // ── 404
 app.use((req, res) => {
-  res.status(404).json({ error: "Not Found KK gdfgdfg fdgfdg dfg" });
+  res.status(404).json({ error: "Quantumhash Corporation" });
 });
 
 // ── Global error handler

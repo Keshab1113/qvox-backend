@@ -1,5 +1,6 @@
 const redis = require("../config/redis");
 const logger = require("../utils/logger");
+const { toMySQLDatetime } = require("../utils/dateFormatter");
 
 const QUEUE_KEY = "qvox:call_log_queue";
 
@@ -36,7 +37,7 @@ function buildPendingLog({ requestId, apiKeyId, mode, model, sourceUrl, filename
     duration_ms: null,
     ip_address: ipAddress,
     user_agent: userAgent,
-    created_at: new Date().toISOString(),
+    created_at: toMySQLDatetime(), // Format: 2026-03-04 06:31:10
   };
 }
 
