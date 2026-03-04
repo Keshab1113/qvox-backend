@@ -11,7 +11,7 @@ COPY . .
 
 RUN mkdir -p logs
 
-EXPOSE 3000
+EXPOSE 9576
 
 # Use dumb-init so signals work correctly
 ENTRYPOINT ["dumb-init", "--"]
