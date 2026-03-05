@@ -1,15 +1,18 @@
 const express = require("express");
 const { v4: uuidv4 } = require("uuid");
 const pool = require("../config/db");
-const redis = require("../config/redis");
 const router = express.Router();
 
-// Simple admin key guard — set ADMIN_KEY in .env
 function adminAuth(req, res, next) {
+  console.log("\n🔐 Admin Auth Check");
   const key = req.headers["x-admin-key"];
+  console.log("Admin key provided:", key ? "Yes" : "No");
+  
   if (!key || key !== process.env.ADMIN_KEY) {
+    console.log("❌ Admin auth failed");
     return res.status(403).json({ error: "Forbidden" });
   }
+  console.log("✅ Admin auth successful");
   next();
 }
 
@@ -17,65 +20,105 @@ router.use(adminAuth);
 
 // ── GET /admin/keys — list all API keys
 router.get("/keys", async (req, res) => {
-  const [rows] = await pool.execute(
-    "SELECT id, key_name, api_key, is_active, created_at FROM api_keys ORDER BY created_at DESC"
-  );
-  res.json({ keys: rows });
+  console.log("\n📋 GET /admin/keys - Fetching all keys");
+  try {
+    const [rows] = await pool.execute(
+      "SELECT id, key_name, api_key, is_active, created_at FROM api_keys ORDER BY created_at DESC"
+    );
+    console.log(`✅ Found ${rows.length} keys`);
+    res.json({ keys: rows });
+  } catch (err) {
+    console.error("❌ Error fetching keys:", err.message);
+    res.status(500).json({ error: "Database error" });
+  }
 });
 
 // ── POST /admin/keys — create new API key
 router.post("/keys", async (req, res) => {
+  console.log("\n➕ POST /admin/keys - Creating new key");
+  console.log("Request body:", req.body);
+  
   const { key_name } = req.body;
-  if (!key_name) return res.status(400).json({ error: "key_name is required" });
+  if (!key_name) {
+    console.log("❌ Missing key_name");
+    return res.status(400).json({ error: "key_name is required" });
+  }
 
   const apiKey = `qvox_${uuidv4().replace(/-/g, "")}`;
-  await pool.execute("INSERT INTO api_keys (key_name, api_key) VALUES (?, ?)", [
-    key_name,
-    apiKey,
-  ]);
-  res.status(201).json({ key_name, api_key: apiKey });
+  console.log("Generated API key:", apiKey);
+  
+  try {
+    await pool.execute("INSERT INTO api_keys (key_name, api_key) VALUES (?, ?)", [
+      key_name,
+      apiKey,
+    ]);
+    console.log("✅ Key created successfully");
+    res.status(201).json({ key_name, api_key: apiKey });
+  } catch (err) {
+    console.error("❌ Error creating key:", err.message);
+    res.status(500).json({ error: "Database error" });
+  }
 });
 
 // ── PATCH /admin/keys/:id — enable/disable a key
 router.patch("/keys/:id", async (req, res) => {
+  console.log(`\n✏️ PATCH /admin/keys/${req.params.id} - Updating key`);
+  console.log("Request body:", req.body);
+  
   const { is_active } = req.body;
-  if (typeof is_active === "undefined")
+  if (typeof is_active === "undefined") {
+    console.log("❌ Missing is_active");
     return res.status(400).json({ error: "is_active required" });
-
-  const [result] = await pool.execute(
-    "UPDATE api_keys SET is_active = ? WHERE id = ?",
-    [is_active ? 1 : 0, req.params.id]
-  );
-
-  if (!result.affectedRows) return res.status(404).json({ error: "Key not found" });
-
-  // Invalidate Redis cache for this key
-  const [rows] = await pool.execute(
-    "SELECT api_key FROM api_keys WHERE id = ?",
-    [req.params.id]
-  );
-  if (rows.length) {
-    await redis.del(`apikey:${rows[0].api_key}`);
   }
 
-  res.json({ success: true });
+  try {
+    const [result] = await pool.execute(
+      "UPDATE api_keys SET is_active = ? WHERE id = ?",
+      [is_active ? 1 : 0, req.params.id]
+    );
+
+    console.log("Update result:", result);
+    
+    if (!result.affectedRows) {
+      console.log("❌ Key not found");
+      return res.status(404).json({ error: "Key not found" });
+    }
+
+    console.log("✅ Key updated successfully");
+    res.json({ success: true });
+  } catch (err) {
+    console.error("❌ Error updating key:", err.message);
+    res.status(500).json({ error: "Database error" });
+  }
 });
 
 // ── DELETE /admin/keys/:id — delete a key
 router.delete("/keys/:id", async (req, res) => {
-  const [rows] = await pool.execute(
-    "SELECT api_key FROM api_keys WHERE id = ?",
-    [req.params.id]
-  );
-  if (!rows.length) return res.status(404).json({ error: "Key not found" });
+  console.log(`\n🗑️ DELETE /admin/keys/${req.params.id} - Deleting key`);
+  
+  try {
+    const [rows] = await pool.execute(
+      "SELECT api_key FROM api_keys WHERE id = ?",
+      [req.params.id]
+    );
+    
+    if (!rows.length) {
+      console.log("❌ Key not found");
+      return res.status(404).json({ error: "Key not found" });
+    }
 
-  await redis.del(`apikey:${rows[0].api_key}`);
-  await pool.execute("DELETE FROM api_keys WHERE id = ?", [req.params.id]);
-  res.json({ success: true });
+    await pool.execute("DELETE FROM api_keys WHERE id = ?", [req.params.id]);
+    console.log("✅ Key deleted successfully");
+    res.json({ success: true });
+  } catch (err) {
+    console.error("❌ Error deleting key:", err.message);
+    res.status(500).json({ error: "Database error" });
+  }
 });
 
 // ── GET /admin/logs — paginated call logs with filters
 router.get("/logs", async (req, res) => {
+  console.log("\n📋 GET /admin/logs - Fetching logs");
   const page = Math.max(1, parseInt(req.query.page) || 1);
   const limit = Math.min(100, parseInt(req.query.limit) || 20);
   const offset = (page - 1) * limit;
@@ -135,6 +178,7 @@ router.get("/logs", async (req, res) => {
 
 // ── GET /admin/logs/:requestId — single log with full output
 router.get("/logs/:requestId", async (req, res) => {
+  console.log(`\n📋 GET /admin/logs/${req.params.requestId} - Fetching single log`);
   const [rows] = await pool.execute(
     `SELECT cl.*, ak.key_name
      FROM call_logs cl
@@ -148,6 +192,7 @@ router.get("/logs/:requestId", async (req, res) => {
 
 // ── GET /admin/stats — summary stats
 router.get("/stats", async (req, res) => {
+  console.log("\n📊 GET /admin/stats - Fetching stats");
   const [overall] = await pool.execute(`
     SELECT
       COUNT(*) as total_calls,
@@ -181,14 +226,10 @@ router.get("/stats", async (req, res) => {
     LIMIT 90
   `);
 
-  // Queue depth
-  const queueDepth = await redis.llen("qvox:call_log_queue");
-
   res.json({
     overall: overall[0],
     by_api_key: byKey,
-    daily,
-    redis_queue_depth: queueDepth,
+    daily
   });
 });
 

@@ -14,8 +14,4 @@ const pool = mysql.createPool({
   timezone: "+00:00",
 });
 
-pool.on("connection", () => {
-  // Connection acquired
-});
-
 module.exports = pool;
