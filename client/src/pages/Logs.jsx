@@ -202,13 +202,13 @@ export default function Logs() {
               <Label>API Key</Label>
               <Select
                 value={filters.api_key_id}
-                onValueChange={(value) => handleFilterChange('api_key_id', value)}
+                onValueChange={(value) => handleFilterChange('api_key_id', value === 'all' ? '' : value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="All Keys" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Keys</SelectItem>
+                  <SelectItem value="all">All Keys</SelectItem>
                   {keys?.map((key) => (
                     <SelectItem key={key.id} value={key.id.toString()}>
                       {key.key_name}
@@ -222,13 +222,13 @@ export default function Logs() {
               <Label>Status</Label>
               <Select
                 value={filters.status}
-                onValueChange={(value) => handleFilterChange('status', value)}
+                onValueChange={(value) => handleFilterChange('status', value === 'all' ? '' : value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="All Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Status</SelectItem>
+                  <SelectItem value="all">All Status</SelectItem>
                   <SelectItem value="success">Success</SelectItem>
                   <SelectItem value="failed">Failed</SelectItem>
                   <SelectItem value="pending">Pending</SelectItem>
@@ -240,13 +240,13 @@ export default function Logs() {
               <Label>Mode</Label>
               <Select
                 value={filters.mode}
-                onValueChange={(value) => handleFilterChange('mode', value)}
+                onValueChange={(value) => handleFilterChange('mode', value === 'all' ? '' : value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="All Modes" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Modes</SelectItem>
+                  <SelectItem value="all">All Modes</SelectItem>
                   <SelectItem value="file">File Upload</SelectItem>
                   <SelectItem value="url">URL</SelectItem>
                 </SelectContent>

@@ -8,6 +8,7 @@ import Transcribe from './pages/Transcribe'
 import ApiKeys from './pages/ApiKeys'
 import Logs from './pages/Logs'
 import Settings from './pages/Settings'
+import Analytics from './pages/Analytics'
 import { AuthProvider } from './hooks/useAuth'
 
 function App() {
@@ -22,6 +23,7 @@ function App() {
           <Route path="api-keys" element={<ApiKeys />} />
           <Route path="logs" element={<Logs />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="analytics" element={<Analytics/>} />
         </Route>
       </Routes>
       <Toaster />
